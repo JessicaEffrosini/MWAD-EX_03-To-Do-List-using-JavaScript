@@ -36,10 +36,260 @@ Deploy the website.
 Upload to GitHub Pages for free hosting.
 
 ## PROGRAM
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo App</title>
+<style>
+    /* Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    body {
+        background: linear-gradient(135deg, #c9b3e7, #8f6bc1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .todo-container {
+        background-color: #fff;
+        padding: 30px 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .todo-container h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .input-container {
+        display: flex;
+        gap: 10px;
+    }
+
+    .input-container input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .input-container input:focus {
+        border-color: #60287c;
+        outline: none;
+    }
+
+    .input-container button {
+        padding: 12px 20px;
+        background-color: #913bb5;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s ease;
+    }
+
+    .input-container button:hover {
+        background-color: #c69ee5;
+    }
+
+    ul.todo-list {
+        list-style: none;
+        margin-top: 20px;
+    }
+
+    ul.todo-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        background-color: #f7f7f7;
+        transition: all 0.3s ease;
+    }
+
+    ul.todo-list li.completed {
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
+
+    .todo-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        margin-left: 10px;
+        transition: color 0.3s ease;
+    }
+
+    .todo-actions button.edit-btn:hover {
+        color: #a36fe1;
+    }
+
+    .todo-actions button.delete-btn:hover {
+        color: #FF4C4C;
+    }
+
+    .filters {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .filters button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background-color: #f0f0f0;
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .filters button.active {
+        background-color: #c56de7;
+        color: #fff;
+    }
+
+    @media(max-width: 500px) {
+        .todo-container {
+            padding: 20px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="todo-container">
+    <h1>My Todo App</h1>
+    <div class="input-container">
+        <input type="text" id="todo-input" placeholder="Add a new task...">
+        <button id="add-btn">Add</button>
+    </div>
+
+    <ul class="todo-list" id="todo-list"></ul>
+
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+    </div>
+</div>
+
+<script>
+    const todoInput = document.getElementById('todo-input');
+    const addBtn = document.getElementById('add-btn');
+    const todoList = document.getElementById('todo-list');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    let todos = JSON.parse(localStorage.getItem('todos')) || [];
+
+    function renderTodos(filter = 'all') {
+        todoList.innerHTML = '';
+        const filteredTodos = todos.filter(todo => {
+            if(filter === 'all') return true;
+            if(filter === 'active') return !todo.completed;
+            if(filter === 'completed') return todo.completed;
+        });
+
+        filteredTodos.forEach((todo, index) => {
+            const li = document.createElement('li');
+            li.classList.toggle('completed', todo.completed);
+            li.innerHTML = `
+                <span>${todo.text}</span>
+                <div class="todo-actions">
+                    <button class="edit-btn">✏️</button>
+                    <button class="delete-btn">🗑️</button>
+                </div>
+            `;
+
+            const editBtn = li.querySelector('.edit-btn');
+            const deleteBtn = li.querySelector('.delete-btn');
+            const textSpan = li.querySelector('span');
+
+            // Toggle completed
+            textSpan.addEventListener('click', () => {
+                todos[index].completed = !todos[index].completed;
+                saveAndRender();
+            });
+
+            // Edit todo
+            editBtn.addEventListener('click', () => {
+                const newText = prompt('Edit your task:', todo.text);
+                if(newText !== null && newText.trim() !== '') {
+                    todos[index].text = newText.trim();
+                    saveAndRender();
+                }
+            });
+
+            // Delete todo
+            deleteBtn.addEventListener('click', () => {
+                todos.splice(index, 1);
+                saveAndRender();
+            });
+
+            todoList.appendChild(li);
+        });
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('todos', JSON.stringify(todos));
+        const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+        renderTodos(activeFilter);
+    }
+
+    addBtn.addEventListener('click', () => {
+        const text = todoInput.value.trim();
+        if(text !== '') {
+            todos.push({ text, completed: false });
+            todoInput.value = '';
+            saveAndRender();
+        }
+    });
+
+    todoInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') addBtn.click();
+    });
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTodos(btn.dataset.filter);
+        });
+    });
+
+    // Initial render
+    renderTodos();
+</script>
+
+</body>
+</html>
+```
 
 ## OUTPUT
 
+<img width="1917" height="1079" alt="image" src="https://github.com/user-attachments/assets/98982d1e-bc51-49eb-8beb-2c0306dd53b4" />
 
 ## RESULT
 The program for creating To-do list using JavaScript is executed successfully.
